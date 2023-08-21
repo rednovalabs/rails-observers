@@ -307,7 +307,7 @@ module ActiveModel
       #   AuditObserver.observed_classes # => [Account, Balance]
       def observe(*models)
         models.flatten!
-        models.collect! { |model| model.respond_to?(:to_sym) ? model.to_s.camelize.constantize : model }
+        models.collect! { |model| model.respond_to?(:to_sym) ? model.to_s.camelize.constantize : model }.uniq!
         singleton_class.redefine_method(:observed_classes) { models }
       end
 
@@ -356,6 +356,8 @@ module ActiveModel
     # Special method sent by the observed class when it is inherited.
     # Passes the new subclass.
     def observed_class_inherited(subclass) #:nodoc:
+      return if observed_classes.include?(subclass)
+
       self.class.observe(observed_classes + [subclass])
       add_observer!(subclass)
     end

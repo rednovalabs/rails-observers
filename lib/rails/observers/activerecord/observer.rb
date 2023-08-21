@@ -98,7 +98,7 @@ module ActiveRecord
 
       def observed_classes
         klasses = super
-        klasses + klasses.map { |klass| klass.descendants }.flatten
+        (klasses + klasses.map { |klass| klass.descendants }.flatten).uniq
       end
 
       def add_observer!(klass)
