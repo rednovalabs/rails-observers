@@ -1,13 +1,11 @@
 module ActiveModel
   class DisabledObserversRegistry
-    extend ActiveSupport::PerThreadRegistry
+    # Preemptively getting ahead of this Rails 7.1 removal: 
+    # DEPRECATION WARNING: ActiveSupport::PerThreadRegistry is deprecated and will be removed in Rails 7.1. Use `Module#thread_mattr_accessor` instead.
+    thread_mattr_accessor :disabled_observers_per_class
+    thread_mattr_accessor :disabled_observers_stacks_per_class
 
-    attr_accessor :disabled_observers_per_class
-    attr_accessor :disabled_observers_stacks_per_class
-
-    def initialize
-      @disabled_observers_per_class         = {}
-      @disabled_observers_stacks_per_class  = {}
-    end
+    self.disabled_observers_per_class         = {}
+    self.disabled_observers_stacks_per_class  = {}
   end
 end
