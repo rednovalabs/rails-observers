@@ -73,6 +73,7 @@ module ActiveModel
     protected
 
       def disabled_observers #:nodoc:
+        DisabledObserversRegistry.disabled_observers_per_class ||= {}
         DisabledObserversRegistry.disabled_observers_per_class[model_class] ||= Set.new
       end
 
@@ -99,6 +100,7 @@ module ActiveModel
       end
 
       def disabled_observer_stack #:nodoc:
+        DisabledObserversRegistry.disabled_observers_stacks_per_class ||= {}
         DisabledObserversRegistry.disabled_observers_stacks_per_class[model_class] ||= []
       end
 
