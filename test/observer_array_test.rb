@@ -168,6 +168,53 @@ class ObserverArrayTest < ActiveSupport::TestCase
     assert_observer_notified Widget, AuditTrail
   end
 
+  test "disabled_observers_per_class registry starts nil in a new thread with no shared default" do
+    value_in_thread = :unset
+    Thread.new do
+      value_in_thread = ActiveModel::DisabledObserversRegistry.disabled_observers_per_class
+    end.join
+    assert_nil value_in_thread
+  end
+
+  test "disabled_observers_stacks_per_class registry starts nil in a new thread with no shared default" do
+    value_in_thread = :unset
+    Thread.new do
+      value_in_thread = ActiveModel::DisabledObserversRegistry.disabled_observers_stacks_per_class
+    end.join
+    assert_nil value_in_thread
+  end
+
+  test "disabling an observer in one thread does not affect a concurrent thread" do
+    ready    = false
+    done     = false
+    mutex    = Mutex.new
+    cond     = ConditionVariable.new
+    thread_saw_disabled = nil
+
+    t = Thread.new do
+      mutex.synchronize { cond.wait(mutex) until ready }
+      thread_saw_disabled = Widget.observers.disabled_for?(AuditTrail.instance)
+      mutex.synchronize { done = true; cond.signal }
+    end
+
+    Widget.observers.disable :audit_trail
+    mutex.synchronize { ready = true; cond.signal }
+    mutex.synchronize { cond.wait(mutex) until done }
+    t.join
+
+    assert_equal false, thread_saw_disabled
+  end
+
+  test "transaction stack is not shared across threads" do
+    stack_in_thread = :unset
+    Widget.observers.disable :audit_trail do
+      Thread.new do
+        stack_in_thread = ActiveModel::DisabledObserversRegistry.disabled_observers_stacks_per_class
+      end.join
+    end
+    assert_nil stack_in_thread
+  end
+
   test "raises an appropriate error when a developer accidentally enables or disables the wrong class (i.e. Widget instead of WidgetObserver)" do
     assert_raise ArgumentError do
       ORM.observers.enable :widget
